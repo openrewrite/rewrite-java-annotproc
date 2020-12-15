@@ -52,9 +52,13 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
+        processingEnv.getMessager().printMessage(Kind.WARNING, "I AM RUNNING REWRITE!!!!!!");
+
         super.init(processingEnv);
 
-        if (System.getProperty("rewrite.disable") != null) {
+        String activeRecipes = System.getProperty("rewrite.activeRecipes");
+
+        if (System.getProperty("rewrite.disable") != null || activeRecipes == null) {
             rewriteDisabled = true;
             return;
         }
@@ -71,7 +75,6 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
                 .scanUserHome()
                 .build();
 
-        String activeRecipes = System.getProperty("rewrite.activeRecipes");
         visitors = env.visitors(activeRecipes == null ? new String[0] : activeRecipes.split(","));
 
         String activeStyles = System.getProperty("rewrite.activeStyles");
