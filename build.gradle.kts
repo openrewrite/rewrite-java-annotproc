@@ -1,10 +1,5 @@
-import io.spring.gradle.bintray.SpringBintrayExtension
-import nebula.plugin.contacts.Contact
-import nebula.plugin.contacts.ContactsExtension
 import nebula.plugin.info.InfoBrokerPlugin
 import nl.javadude.gradle.plugins.license.LicenseExtension
-import org.jfrog.gradle.plugin.artifactory.dsl.ArtifactoryPluginConvention
-import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 import java.util.*
 
 buildscript {
@@ -32,7 +27,7 @@ plugins {
 
 apply(plugin = "license")
 apply(plugin = "nebula.maven-resolved-dependencies")
-apply(plugin = "io.spring.publishing")
+apply(plugin = "nebula.maven-publish")
 
 group = "org.openrewrite"
 
@@ -47,6 +42,15 @@ configurations.all {
         cacheChangingModulesFor(0, TimeUnit.SECONDS)
         cacheDynamicVersionsFor(0, TimeUnit.SECONDS)
     }
+}
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+tasks.withType<Javadoc> {
+    exclude("**/RewriteAnnotationProcessor**")
 }
 
 dependencies {
@@ -87,13 +91,6 @@ tasks.named<Test>("test") {
     jvmArgs = listOf("-XX:+UnlockDiagnosticVMOptions", "-XX:+ShowHiddenFrames")
 }
 
-configure<ContactsExtension> {
-    val j = Contact("jonathan@moderne.io")
-    j.moniker("Jonathan Schneider")
-
-    people["jonathan@moderne.io"] = j
-}
-
 configure<LicenseExtension> {
     ext.set("year", Calendar.getInstance().get(Calendar.YEAR))
     skipExistingHeaders = true
@@ -127,25 +124,6 @@ configure<PublishingExtension> {
                 }
             }
         }
-    }
-}
-
-configure<SpringBintrayExtension> {
-    org = "openrewrite"
-    repo = "maven"
-}
-
-project.withConvention(ArtifactoryPluginConvention::class) {
-    setContextUrl("https://oss.jfrog.org/artifactory")
-    publisherConfig.let {
-        val repository: PublisherConfig.Repository = it.javaClass
-                .getDeclaredField("repository")
-                .apply { isAccessible = true }
-                .get(it) as PublisherConfig.Repository
-
-        repository.setRepoKey("oss-snapshot-local")
-        repository.setUsername(project.findProperty("bintrayUser"))
-        repository.setPassword(project.findProperty("bintrayKey"))
     }
 }
 
