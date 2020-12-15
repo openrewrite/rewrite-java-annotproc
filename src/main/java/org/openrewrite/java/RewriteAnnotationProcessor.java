@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
-@Incubating(since = "6.2.0")
 @SupportedAnnotationTypes("*")
 public class RewriteAnnotationProcessor extends AbstractProcessor {
     private boolean rewriteDisabled = false;
@@ -52,19 +51,17 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
-        processingEnv.getMessager().printMessage(Kind.WARNING, "I AM RUNNING REWRITE!!!!!!");
-
         super.init(processingEnv);
 
         String activeRecipes = System.getProperty("rewrite.activeRecipes");
+
+        processingEnv.getMessager().printMessage(Kind.NOTE, "Running Rewrite");
 
         if (System.getProperty("rewrite.disable") != null || activeRecipes == null) {
             rewriteDisabled = true;
             return;
         }
 
-//        JavacProcessingEnvironment javacProcessingEnv = getJavacProcessingEnvironment(processingEnv);
-        // TODO only if options[-source] == 1.8 ...
         this.trees = Trees.instance(processingEnv);
 
         Environment env = Environment
@@ -75,7 +72,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
                 .scanUserHome()
                 .build();
 
-        visitors = env.visitors(activeRecipes == null ? new String[0] : activeRecipes.split(","));
+        visitors = env.visitors(activeRecipes.split(","));
 
         String activeStyles = System.getProperty("rewrite.activeStyles");
         styles = env.styles(activeStyles == null ? new String[0] : activeStyles.split(","))
@@ -169,7 +166,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
     }
 
     /**
-     * We just return the latest version of whatever JDK we run on. Stupid? Yeah, but it's either that or warnings on all versions but 1.
+     * We just return the latest version of whatever JDK we run on.
      */
     @Override
     public SourceVersion getSupportedSourceVersion() {
@@ -183,8 +180,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
             try {
                 path = trees.getPath(element);
             } catch (NullPointerException ignore) {
-                // Happens if a package-info.java dowsn't conatin a package declaration.
-                // https://github.com/rzwitserloot/lombok/issues/2184
+                // Happens if a package-info.java doesn't conatin a package declaration.
                 // We can safely ignore those, since they do not need any processing
             }
         }
