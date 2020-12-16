@@ -133,20 +133,19 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
             }
 
             //noinspection ResultOfMethodCallIgnored
-            new File("./rewrite").mkdirs();
+            new File("./.rewrite").mkdirs();
 
-            Path patchFile = new File("./rewrite").toPath().resolve("rewrite.patch");
+            Path patchFile = new File("./.rewrite").toPath().resolve("rewrite.patch");
             try (BufferedWriter writer = Files.newBufferedWriter(patchFile)) {
-                changes.stream()
-                        .map(Change::diff)
-                        .forEach(diff -> {
-                            try {
-                                writer.write(diff + "\n");
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
-
+                for (Change change : changes) {
+                    String diff = change.diff();
+                    try {
+                        writer.write(diff + "\n");
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                writer.flush();
             } catch (Exception e) {
                 StringWriter exceptionWriter = new StringWriter();
                 e.printStackTrace(new PrintWriter(exceptionWriter));

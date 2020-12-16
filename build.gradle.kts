@@ -55,7 +55,7 @@ tasks.withType<Javadoc> {
 
 dependencies {
     implementation("org.openrewrite:rewrite-core:latest.integration")
-    implementation("org.openrewrite:rewrite-java-11:latest.release")
+    implementation("org.openrewrite:rewrite-java-11:latest.integration")
 
     testImplementation("org.jooq:joor:latest.release")
 
