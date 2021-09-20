@@ -18,18 +18,26 @@ package org.openrewrite.java
 import org.joor.CompileOptions
 import org.joor.Reflect
 import org.junit.jupiter.api.Test
+import java.nio.file.spi.FileSystemProvider
 
 class RewriteAnnotationProcessorTest {
     @Test
     fun serializeAsts() {
         val p = RewriteAnnotationProcessor()
 
+        FileSystemProvider.installedProviders()
+
+        System.setProperty("rewrite.activeRecipes", "org.openrewrite.java.RemoveUnusedImports");
+
         Reflect.compile(
-            "org.openrewrite.java.SucceedProducingAst",
+            "org.openrewrite.Test",
+            //language=java
             """
-                package org.openrewrite.java;
+                package org.openrewrite;
                 
-                public class SucceedProducingAst {
+                import java.util.List;
+                
+                public class Test {
                 }
             """.trimIndent(),
             CompileOptions().processors(p)

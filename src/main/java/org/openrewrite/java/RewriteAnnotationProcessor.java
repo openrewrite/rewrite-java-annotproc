@@ -18,11 +18,17 @@ package org.openrewrite.java;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
-import org.openrewrite.*;
+import com.sun.tools.javac.util.Context;
+import org.openrewrite.InMemoryExecutionContext;
+import org.openrewrite.Recipe;
+import org.openrewrite.Result;
+import org.openrewrite.config.Environment;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
+import org.openrewrite.java.tree.Space;
+import org.openrewrite.style.NamedStyles;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -33,21 +39,20 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
 import java.io.*;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toList;
 
 @SupportedAnnotationTypes("*")
 public class RewriteAnnotationProcessor extends AbstractProcessor {
     private boolean rewriteDisabled = false;
+
+    @Nullable
     private Trees trees;
-    private Collection<RefactorVisitor<?>> visitors;
-    private Collection<JavaStyle> styles;
+
+    private Recipe recipe;
+    private List<NamedStyles> styles;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -66,20 +71,14 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
 
         Environment env = Environment
                 .builder(System.getProperties())
-                .scanClasspath(Arrays.stream(System.getProperty("java.class.path").split("\\Q" + System.getProperty("path.separator") + "\\E"))
-                        .map(cpEntry -> new File(cpEntry).toPath())
-                        .collect(toList()))
+                .scanRuntimeClasspath()
                 .scanUserHome()
                 .build();
 
-        visitors = env.visitors(activeRecipes.split(","));
+        recipe = env.activateRecipes(activeRecipes.split(","));
 
         String activeStyles = System.getProperty("rewrite.activeStyles");
-        styles = env.styles(activeStyles == null ? new String[0] : activeStyles.split(","))
-                .stream()
-                .filter(JavaStyle.class::isInstance)
-                .map(JavaStyle.class::cast)
-                .collect(Collectors.toList());
+        styles = env.activateStyles(activeStyles == null ? new String[0] : activeStyles.split(","));
     }
 
     @Override
@@ -88,7 +87,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
             return false;
         }
 
-        Collection<J.CompilationUnit> compilationUnits = new ArrayList<>(roundEnv.getRootElements().size());
+        List<J.CompilationUnit> compilationUnits = new ArrayList<>(roundEnv.getRootElements().size());
 
         Map<String, JavaType.Class> sharedClassTypes = new HashMap<>();
 
@@ -100,10 +99,10 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
             }
 
             try {
-                URI sourcePath = cu.getSourceFile().toUri();
+                Path sourcePath = Paths.get(cu.getSourceFile().toUri());
                 String userDir = System.getProperty("user.dir");
                 if (userDir != null) {
-                    sourcePath = Paths.get(userDir).toUri().relativize(sourcePath).normalize();
+                    sourcePath = Paths.get(userDir).relativize(sourcePath).normalize();
                 }
 
                 String source;
@@ -114,31 +113,28 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
                 }
 
                 Java11ParserVisitor parser = new Java11ParserVisitor(sourcePath, source, false,
-                        styles, sharedClassTypes);
+                        styles, sharedClassTypes, new InMemoryExecutionContext(), new Context());
 
-                compilationUnits.add((J.CompilationUnit) parser.scan(cu, Formatting.EMPTY));
+                compilationUnits.add((J.CompilationUnit) parser.scan(cu, Space.EMPTY));
             } catch (Throwable t) {
                 StringWriter exceptionWriter = new StringWriter();
+                t.printStackTrace();
                 t.printStackTrace(new PrintWriter(exceptionWriter));
                 processingEnv.getMessager().printMessage(Kind.ERROR, "Unable to map compilation unit to Rewrite AST at " +
-                        cu.getSourceFile().toUri() + ": " + exceptionWriter.toString());
+                        cu.getSourceFile().toUri() + ": " + exceptionWriter);
             }
         }
 
-        Collection<Change> changes = new Refactor().visit(visitors).fix(compilationUnits, 3);
+        List<Result> results = recipe.run(compilationUnits);
 
-        if (!changes.isEmpty()) {
-            for (Change change : changes) {
-                logVisitorsThatMadeChanges(change);
-            }
-
+        if (!results.isEmpty()) {
             //noinspection ResultOfMethodCallIgnored
             new File("./.rewrite").mkdirs();
 
             Path patchFile = new File("./.rewrite").toPath().resolve("rewrite.patch");
             try (BufferedWriter writer = Files.newBufferedWriter(patchFile)) {
-                for (Change change : changes) {
-                    String diff = change.diff();
+                for (Result result : results) {
+                    String diff = result.diff();
                     try {
                         writer.write(diff + "\n");
                     } catch (IOException e) {
@@ -155,13 +151,6 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
         }
 
         return false;
-    }
-
-    private void logVisitorsThatMadeChanges(Change change) {
-        processingEnv.getMessager().printMessage(Kind.WARNING, change.getOriginal().getSourcePath());
-        for (String visitor : change.getVisitorsThatMadeChanges()) {
-            processingEnv.getMessager().printMessage(Kind.WARNING, "  " + visitor);
-        }
     }
 
     /**

@@ -1,4 +1,4 @@
-![Logo](https://github.com/openrewrite/rewrite/raw/master/doc/logo-oss.png)
+![Logo](https://github.com/openrewrite/rewrite/raw/main/doc/logo-oss.png)
 ### Run Rewrite recipes as an annotation processor
 
 [![Build Status](https://circleci.com/gh/openrewrite/rewrite-java-annotproc.svg?style=shield)](https://circleci.com/gh/openrewrite/rewrite-java-annotproc)

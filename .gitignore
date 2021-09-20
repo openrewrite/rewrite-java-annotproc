@@ -4,3 +4,4 @@ gradle.properties
 .java-version
 out/
 .idea/
+.rewrite
