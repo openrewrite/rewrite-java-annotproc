@@ -17,10 +17,12 @@ package org.openrewrite.java
 
 import org.joor.CompileOptions
 import org.joor.Reflect
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.nio.file.spi.FileSystemProvider
 
 class RewriteAnnotationProcessorTest {
+    @Disabled
     @Test
     fun serializeAsts() {
         val p = RewriteAnnotationProcessor()
