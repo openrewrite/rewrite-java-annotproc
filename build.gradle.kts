@@ -28,8 +28,8 @@ configure<nebula.plugin.release.git.base.ReleasePluginExtension> {
     defaultVersionStrategy = nebula.plugin.release.NetflixOssStrategies.SNAPSHOT(project)
 }
 
-group = "org.openrewrite.recipe"
-description = "Enforce logging best practices and migrate between logging frameworks. Automatically."
+group = "org.openrewrite"
+description = "Run Rewrite recipes as an annotation processor."
 
 repositories {
     if (!project.hasProperty("releasing")) {
