@@ -46,7 +46,7 @@ import java.util.*;
 
 @SupportedAnnotationTypes("*")
 public class RewriteAnnotationProcessor extends AbstractProcessor {
-    private boolean rewriteDisabled = false;
+    private boolean rewriteDisabled;
 
     @Nullable
     private Trees trees;
