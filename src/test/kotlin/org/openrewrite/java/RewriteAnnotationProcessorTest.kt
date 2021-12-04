@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test
 import java.nio.file.spi.FileSystemProvider
 
 class RewriteAnnotationProcessorTest {
-    @Disabled
+
     @Test
     fun serializeAsts() {
         val p = RewriteAnnotationProcessor()

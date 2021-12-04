@@ -112,8 +112,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
                     source = cu.getSourceFile().getCharContent(true).toString();
                 }
 
-                Java11ParserVisitor parser = new Java11ParserVisitor(sourcePath, source, false,
-                        styles, sharedClassTypes, new InMemoryExecutionContext(), new Context());
+                Java11ParserVisitor parser = new Java11ParserVisitor(sourcePath, source, Collections.emptyList(), new InMemoryExecutionContext(), new Context());
 
                 compilationUnits.add((J.CompilationUnit) parser.scan(cu, Space.EMPTY));
             } catch (Throwable t) {
@@ -146,7 +145,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
                 StringWriter exceptionWriter = new StringWriter();
                 e.printStackTrace(new PrintWriter(exceptionWriter));
                 processingEnv.getMessager().printMessage(Kind.ERROR, "Unable to generate rewrite diff file: " +
-                        exceptionWriter.toString());
+                        exceptionWriter);
             }
         }
 
@@ -168,7 +167,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
             try {
                 path = trees.getPath(element);
             } catch (NullPointerException ignore) {
-                // Happens if a package-info.java doesn't conatin a package declaration.
+                // Happens if a package-info.java doesn't contain a package declaration.
                 // We can safely ignore those, since they do not need any processing
             }
         }

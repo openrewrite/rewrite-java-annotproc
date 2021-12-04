@@ -80,13 +80,13 @@ dependencies {
     implementation("org.openrewrite:rewrite-java-11:latest.integration")
 
     testImplementation("org.jooq:joor:latest.release")
-
     testImplementation("org.jetbrains.kotlin:kotlin-reflect")
     testImplementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     testImplementation("org.openrewrite:rewrite-test:latest.release")
     testImplementation("org.assertj:assertj-core:latest.release")
 
-    testImplementation("com.google.auto.service:auto-service:latest.release")
+    testAnnotationProcessor("com.google.auto.service:auto-service:latest.release")
+    testCompileOnly("com.google.auto.service:auto-service:latest.release")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:latest.release")
     testImplementation("org.junit.jupiter:junit-jupiter-params:latest.release")
