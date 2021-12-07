@@ -15,10 +15,11 @@
  */
 package org.openrewrite.java
 
+import org.assertj.core.api.Assertions.assertThat
 import org.joor.CompileOptions
 import org.joor.Reflect
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.openrewrite.java.tree.J
 import java.nio.file.spi.FileSystemProvider
 
 class RewriteAnnotationProcessorTest {
@@ -43,6 +44,13 @@ class RewriteAnnotationProcessorTest {
                 }
             """.trimIndent(),
             CompileOptions().processors(p)
-        ).create().get<Any>()
+        ).create()
+
+        assertThat(p.results.size).isEqualTo(1)
+        val result = p.results[0]
+        assertThat(result.after).isNotNull
+        assertThat(result.after).isInstanceOf(J.CompilationUnit::class.java)
+        val after = result.after as J.CompilationUnit
+        assertThat(after.imports.size).isEqualTo(0)
     }
 }

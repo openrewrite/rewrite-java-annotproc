@@ -22,11 +22,11 @@ import com.sun.tools.javac.util.Context;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Recipe;
 import org.openrewrite.Result;
+import org.openrewrite.SourceFile;
 import org.openrewrite.config.Environment;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.tree.J;
-import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.java.tree.Space;
 import org.openrewrite.style.NamedStyles;
 
@@ -52,7 +52,18 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
     private Trees trees;
 
     private Recipe recipe;
+
     private List<NamedStyles> styles;
+
+    public List<Result> getResults() {
+        if(results == null) {
+            return Collections.emptyList();
+        }
+        return results;
+    }
+
+    @Nullable
+    private List<Result> results;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -89,8 +100,6 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
 
         List<J.CompilationUnit> compilationUnits = new ArrayList<>(roundEnv.getRootElements().size());
 
-        Map<String, JavaType.Class> sharedClassTypes = new HashMap<>();
-
         for (Element element : roundEnv.getRootElements()) {
             JCCompilationUnit cu = toUnit(element);
 
@@ -102,7 +111,11 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
                 Path sourcePath = Paths.get(cu.getSourceFile().toUri());
                 String userDir = System.getProperty("user.dir");
                 if (userDir != null) {
-                    sourcePath = Paths.get(userDir).relativize(sourcePath).normalize();
+                    try {
+                        sourcePath = Paths.get(userDir).relativize(sourcePath).normalize();
+                    } catch (IllegalArgumentException e) {
+                        // This is only a problem when running tests via StringFileSystemProvider on Windows
+                    }
                 }
 
                 String source;
@@ -124,7 +137,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
             }
         }
 
-        List<Result> results = recipe.run(compilationUnits);
+        results = recipe.run(compilationUnits);
 
         if (!results.isEmpty()) {
             //noinspection ResultOfMethodCallIgnored
