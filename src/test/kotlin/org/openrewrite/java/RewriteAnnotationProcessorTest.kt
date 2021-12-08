@@ -25,13 +25,12 @@ import java.nio.file.spi.FileSystemProvider
 class RewriteAnnotationProcessorTest {
 
     @Test
-    fun serializeAsts() {
+    fun performRefactor() {
         val p = RewriteAnnotationProcessor()
 
         FileSystemProvider.installedProviders()
 
         System.setProperty("rewrite.activeRecipes", "org.openrewrite.java.RemoveUnusedImports");
-
         Reflect.compile(
             "org.openrewrite.Test",
             //language=java

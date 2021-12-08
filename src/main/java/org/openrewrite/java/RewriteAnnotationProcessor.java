@@ -22,7 +22,6 @@ import com.sun.tools.javac.util.Context;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Recipe;
 import org.openrewrite.Result;
-import org.openrewrite.SourceFile;
 import org.openrewrite.config.Environment;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.internal.lang.Nullable;
@@ -51,9 +50,10 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
     @Nullable
     private Trees trees;
 
+    @Nullable
     private Recipe recipe;
 
-    private List<NamedStyles> styles;
+    private List<NamedStyles> styles = Collections.emptyList();
 
     public List<Result> getResults() {
         if(results == null) {
@@ -65,15 +65,24 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
     @Nullable
     private List<Result> results;
 
+    @Nullable
+    private static String getConfig(String key) {
+        String result = System.getProperty(key);
+        if(result == null) {
+            result = System.getenv(key);
+        }
+        return result;
+    }
+
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
 
-        String activeRecipes = System.getProperty("rewrite.activeRecipes");
+        String activeRecipes = getConfig("rewrite.activeRecipes");
 
         processingEnv.getMessager().printMessage(Kind.NOTE, "Running Rewrite");
 
-        if (System.getProperty("rewrite.disable") != null || activeRecipes == null) {
+        if (getConfig("rewrite.disable") != null || activeRecipes == null) {
             rewriteDisabled = true;
             return;
         }
@@ -88,13 +97,13 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
 
         recipe = env.activateRecipes(activeRecipes.split(","));
 
-        String activeStyles = System.getProperty("rewrite.activeStyles");
+        String activeStyles = getConfig("rewrite.activeStyles");
         styles = env.activateStyles(activeStyles == null ? new String[0] : activeStyles.split(","));
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        if (rewriteDisabled || roundEnv.processingOver()) {
+        if (recipe == null || rewriteDisabled || roundEnv.processingOver()) {
             return false;
         }
 
@@ -125,7 +134,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
                     source = cu.getSourceFile().getCharContent(true).toString();
                 }
 
-                Java11ParserVisitor parser = new Java11ParserVisitor(sourcePath, source, Collections.emptyList(), new InMemoryExecutionContext(), new Context());
+                Java11ParserVisitor parser = new Java11ParserVisitor(sourcePath, source, styles, new InMemoryExecutionContext(), new Context());
 
                 compilationUnits.add((J.CompilationUnit) parser.scan(cu, Space.EMPTY));
             } catch (Throwable t) {
