@@ -71,6 +71,10 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
         if(result == null) {
             result = System.getenv(key);
         }
+        // some shells make it annoying to set environment variables whose names contain a "."
+        if(result == null) {
+            result = System.getenv(key.replace(".", "_"));
+        }
         return result;
     }
 
@@ -80,7 +84,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
 
         String activeRecipes = getConfig("rewrite.activeRecipes");
 
-        processingEnv.getMessager().printMessage(Kind.NOTE, "Running Rewrite");
+        processingEnv.getMessager().printMessage(Kind.NOTE, "Running Rewrite with active recipes: " + activeRecipes);
 
         if (getConfig("rewrite.disable") != null || activeRecipes == null) {
             rewriteDisabled = true;
@@ -147,12 +151,14 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
         }
 
         results = recipe.run(compilationUnits);
-
-        if (!results.isEmpty()) {
+        if(results.isEmpty()) {
+            processingEnv.getMessager().printMessage(Kind.NOTE, "Rewrite run produced no results, no patch file generated");
+        } else {
             //noinspection ResultOfMethodCallIgnored
             new File("./.rewrite").mkdirs();
 
             Path patchFile = new File("./.rewrite").toPath().resolve("rewrite.patch");
+            processingEnv.getMessager().printMessage(Kind.NOTE, "Writing Rewrite patch file to: " + patchFile.toAbsolutePath());
             try (BufferedWriter writer = Files.newBufferedWriter(patchFile)) {
                 for (Result result : results) {
                     String diff = result.diff();
