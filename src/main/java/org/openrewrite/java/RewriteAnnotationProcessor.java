@@ -17,6 +17,7 @@ package org.openrewrite.java;
 
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
+import com.sun.tools.javac.processing.JavacRoundEnvironment;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
@@ -39,6 +40,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -138,7 +140,17 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
                 } catch (Throwable ignored) {
                     source = cu.getSourceFile().getCharContent(true).toString();
                 }
-                Context context = ((JavacProcessingEnvironment)roundEnv).getContext();
+                Context context;
+                if(roundEnv instanceof JavacProcessingEnvironment) {
+                    context = ((JavacProcessingEnvironment)roundEnv).getContext();
+                } else if(roundEnv instanceof JavacRoundEnvironment) {
+                    // The context is there, but inaccessible
+                    Field processingEnv = JavacRoundEnvironment.class.getDeclaredField("processingEnv");
+                    processingEnv.setAccessible(true);
+                    context = ((JavacProcessingEnvironment)processingEnv.get(roundEnv)).getContext();
+                } else {
+                    context = new Context();
+                }
                 Java11ParserVisitor parser = new Java11ParserVisitor(sourcePath, source, styles, new InMemoryExecutionContext(), context);
 
                 compilationUnits.add((J.CompilationUnit) parser.scan(cu, Space.EMPTY));
