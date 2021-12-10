@@ -19,6 +19,7 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Recipe;
 import org.openrewrite.Result;
@@ -137,8 +138,8 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
                 } catch (Throwable ignored) {
                     source = cu.getSourceFile().getCharContent(true).toString();
                 }
-
-                Java11ParserVisitor parser = new Java11ParserVisitor(sourcePath, source, styles, new InMemoryExecutionContext(), new Context());
+                Context context = ((JavacProcessingEnvironment)roundEnv).getContext();
+                Java11ParserVisitor parser = new Java11ParserVisitor(sourcePath, source, styles, new InMemoryExecutionContext(), context);
 
                 compilationUnits.add((J.CompilationUnit) parser.scan(cu, Space.EMPTY));
             } catch (Throwable t) {
