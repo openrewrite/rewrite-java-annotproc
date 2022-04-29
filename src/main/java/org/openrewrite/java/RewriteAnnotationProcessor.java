@@ -25,8 +25,10 @@ import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Recipe;
 import org.openrewrite.Result;
 import org.openrewrite.config.Environment;
+import org.openrewrite.internal.EncodingDetectingInputStream;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.internal.lang.Nullable;
+import org.openrewrite.java.internal.JavaTypeCache;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.Space;
 import org.openrewrite.style.NamedStyles;
@@ -57,6 +59,8 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
     private Recipe recipe;
 
     private List<NamedStyles> styles = Collections.emptyList();
+
+    private JavaTypeCache typeCache = new JavaTypeCache();
 
     public List<Result> getResults() {
         if(results == null) {
@@ -134,12 +138,6 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
                     }
                 }
 
-                String source;
-                try {
-                    source = StringUtils.readFully(cu.getSourceFile().openInputStream());
-                } catch (Throwable ignored) {
-                    source = cu.getSourceFile().getCharContent(true).toString();
-                }
                 Context context;
                 if(roundEnv instanceof JavacProcessingEnvironment) {
                     context = ((JavacProcessingEnvironment)roundEnv).getContext();
@@ -151,7 +149,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
                 } else {
                     context = new Context();
                 }
-                Java11ParserVisitor parser = new Java11ParserVisitor(sourcePath, source, styles, new InMemoryExecutionContext(), context);
+                Java11ParserVisitor parser = new Java11ParserVisitor(sourcePath, new EncodingDetectingInputStream(cu.getSourceFile().openInputStream()), styles, typeCache, new InMemoryExecutionContext(), context);
 
                 compilationUnits.add((J.CompilationUnit) parser.scan(cu, Space.EMPTY));
             } catch (Throwable t) {
