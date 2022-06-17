@@ -63,7 +63,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
     private JavaTypeCache typeCache = new JavaTypeCache();
 
     public List<Result> getResults() {
-        if(results == null) {
+        if (results == null) {
             return Collections.emptyList();
         }
         return results;
@@ -75,11 +75,11 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
     @Nullable
     private static String getConfig(String key) {
         String result = System.getProperty(key);
-        if(result == null) {
+        if (result == null) {
             result = System.getenv(key);
         }
         // some shells make it annoying to set environment variables whose names contain a "."
-        if(result == null) {
+        if (result == null) {
             result = System.getenv(key.replace(".", "_"));
         }
         return result;
@@ -139,13 +139,13 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
                 }
 
                 Context context;
-                if(roundEnv instanceof JavacProcessingEnvironment) {
-                    context = ((JavacProcessingEnvironment)roundEnv).getContext();
-                } else if(roundEnv instanceof JavacRoundEnvironment) {
+                if (roundEnv instanceof JavacProcessingEnvironment) {
+                    context = ((JavacProcessingEnvironment) roundEnv).getContext();
+                } else if (roundEnv instanceof JavacRoundEnvironment) {
                     // The context is there, but inaccessible
                     Field processingEnv = JavacRoundEnvironment.class.getDeclaredField("processingEnv");
                     processingEnv.setAccessible(true);
-                    context = ((JavacProcessingEnvironment)processingEnv.get(roundEnv)).getContext();
+                    context = ((JavacProcessingEnvironment) processingEnv.get(roundEnv)).getContext();
                 } else {
                     context = new Context();
                 }
@@ -162,7 +162,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
         }
 
         results = recipe.run(compilationUnits);
-        if(results.isEmpty()) {
+        if (results.isEmpty()) {
             processingEnv.getMessager().printMessage(Kind.NOTE, "Rewrite run produced no results, no patch file generated");
         } else {
             //noinspection ResultOfMethodCallIgnored
