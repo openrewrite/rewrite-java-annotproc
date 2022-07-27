@@ -58,11 +58,11 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
     @Nullable
     private Recipe recipe;
 
-    private List<NamedStyles> styles = Collections.emptyList();
+    private /*~~>*/List<NamedStyles> styles = Collections.emptyList();
 
     private JavaTypeCache typeCache = new JavaTypeCache();
 
-    public List<Result> getResults() {
+    public /*~~>*/List<Result> getResults() {
         if (results == null) {
             return Collections.emptyList();
         }
@@ -70,7 +70,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
     }
 
     @Nullable
-    private List<Result> results;
+    private /*~~>*/List<Result> results;
 
     @Nullable
     private static String getConfig(String key) {
@@ -118,7 +118,7 @@ public class RewriteAnnotationProcessor extends AbstractProcessor {
             return false;
         }
 
-        List<J.CompilationUnit> compilationUnits = new ArrayList<>(roundEnv.getRootElements().size());
+        /*~~>*/List<J.CompilationUnit> compilationUnits = new ArrayList<>(roundEnv.getRootElements().size());
 
         for (Element element : roundEnv.getRootElements()) {
             JCCompilationUnit cu = toUnit(element);
