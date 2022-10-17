@@ -31,6 +31,7 @@ configure<nebula.plugin.release.git.base.ReleasePluginExtension> {
 
 dependencyCheck {
     analyzers.assemblyEnabled = false
+    suppressionFile = "suppressions.xml"
     failBuildOnCVSS = 9.0F
 }
 
